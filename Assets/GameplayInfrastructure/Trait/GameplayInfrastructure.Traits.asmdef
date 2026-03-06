@@ -1,0 +1,17 @@
+{
+    "name": "GameplayInfrastructure.Traits",
+    "rootNamespace": "",
+    "references": [
+        "GUID:09a7c466fa0b0422cb4c8c6755588bc2",
+        "GUID:ec17bac1c55cc47fc8e556c8d1493148"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

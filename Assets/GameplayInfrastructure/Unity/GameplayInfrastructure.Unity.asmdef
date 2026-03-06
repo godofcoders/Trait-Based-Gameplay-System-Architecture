@@ -1,0 +1,18 @@
+{
+    "name": "GameplayInfrastructure.Unity",
+    "rootNamespace": "",
+    "references": [
+        "GUID:ec17bac1c55cc47fc8e556c8d1493148",
+        "GUID:9baec2c462c184687af6a01182d97c14",
+        "GUID:09a7c466fa0b0422cb4c8c6755588bc2"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
