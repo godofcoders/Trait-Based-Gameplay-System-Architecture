@@ -2,7 +2,7 @@
 
 A highly scalable, AAA-standard gameplay infrastructure for Unity. This project demonstrates how to move away from rigid, monolithic `MonoBehaviour` inheritance and instead build a flexible, composition-based entity system using Pure C# and Clean Architecture principles.
 
-![Architecture Diagram](docs/architecture_diagram.png)  
+![Architecture Diagram](docs/Architecture.png)  
 *(Note: Replace this link with a screenshot or diagram of your system)*
 
 ## 🚀 Overview
