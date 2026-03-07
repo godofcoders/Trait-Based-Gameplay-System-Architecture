@@ -39,6 +39,8 @@ Instead of calling each other directly, traits **react to attribute changes thro
 
 # 🧠 Design Patterns & Principles
 
+![Architecture Diagram](docs/Architecture.png)
+
 This architecture intentionally applies several **industry-grade engineering principles** commonly used in large-scale games.
 
 ---
