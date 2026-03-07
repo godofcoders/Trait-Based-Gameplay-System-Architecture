@@ -323,5 +323,3 @@ It scales extremely well as gameplay complexity grows.
 MIT License.
 
 ---
-
-✅ If you'd like, I can also show you how to add **one diagram that makes this architecture immediately understandable to senior engineers and recruiters** (the type used in **AAA studio architecture docs**).
