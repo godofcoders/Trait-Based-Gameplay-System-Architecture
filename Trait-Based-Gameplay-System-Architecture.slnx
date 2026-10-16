@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="GameplayInfrastructure.Traits.csproj" />
+  <Project Path="GameplayInfrastructure.Core.csproj" />
+  <Project Path="GameplayInfrastructure.Data.csproj" />
+  <Project Path="GameplayInfrastructure.Unity.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+</Solution>
