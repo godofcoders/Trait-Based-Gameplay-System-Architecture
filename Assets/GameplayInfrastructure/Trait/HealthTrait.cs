@@ -1,58 +1,42 @@
-using UnityEngine;
+using System;
 using GameplayInfrastructure.Core;
-using GameplayInfrastructure.Data;
 
 namespace GameplayInfrastructure.Traits
 {
-    public class HealthTrait : ITrait
+    public sealed class HealthTrait : Trait
     {
-        private IAttributeContext _context;
-        private readonly GameObject _owner;
+        private readonly float _initialHealth;
+        public bool IsDead { get; private set; }
+        public event Action Died;
 
-        // Injecting the owner object so we can destroy it, keeping logic decoupled
-        public HealthTrait(GameObject owner, float initialHealth)
+        public HealthTrait(float initialHealth)
         {
-            _owner = owner;
-            // Note: In a full system, initialHealth would also come from a ScriptableObject configuration
+            Numeric.RequireFinite(initialHealth, nameof(initialHealth));
+            if (initialHealth <= 0f) throw new ArgumentOutOfRangeException(nameof(initialHealth));
             _initialHealth = initialHealth;
         }
 
-        private float _initialHealth;
-
-        public void Initialize(IAttributeContext context)
+        protected override void OnInitialize()
         {
-            _context = context;
-            _context.SetValue(AttributeHashes.MaxHealth, _initialHealth);
-            _context.SetValue(AttributeHashes.Health, _initialHealth);
-
-            // Subscribe to attribute changes
-            _context.OnAttributeChanged += HandleAttributeChanged;
+            // Fixed maximum for this example. Equal bounds make MaxHealth immutable.
+            Context.Register(AttributeHashes.MaxHealth, _initialHealth, _initialHealth, _initialHealth);
+            Context.Register(AttributeHashes.Health, _initialHealth, 0f, _initialHealth);
+            Context.OnAttributeChanged += HandleAttributeChanged;
         }
 
-        private void HandleAttributeChanged(int hash, float oldValue, float newValue)
+        private void HandleAttributeChanged(int id, float oldValue, float newValue)
         {
-            if (hash == AttributeHashes.Health && newValue <= 0f)
-            {
-                Die();
-            }
+            // Unsubscription does not remove callbacks from an in-flight event snapshot.
+            if (IsDisposed) return;
+            if (id != AttributeHashes.Health || newValue > 0f || IsDead) return;
+            IsDead = true; // Reentrant writes cannot repeat death.
+            Died?.Invoke();
         }
 
-        public void Tick(float deltaTime) { /* Empty: We rely on events, not polling! */ }
-
-        private void Die()
+        protected override void OnDispose(IAttributeContext context)
         {
-            Debug.Log($"[{_owner.name}] Health reached zero. Entity destroyed.");
-            Object.Destroy(_owner);
-        }
-
-        public void Dispose()
-        {
-            // Always unsubscribe to prevent memory leaks
-            if (_context != null)
-            {
-                _context.OnAttributeChanged -= HandleAttributeChanged;
-            }
+            context.OnAttributeChanged -= HandleAttributeChanged;
+            Died = null;
         }
     }
-
 }

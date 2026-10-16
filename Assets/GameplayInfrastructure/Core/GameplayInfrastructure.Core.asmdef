@@ -1,3 +1,5 @@
 {
-	"name": "GameplayInfrastructure.Core"
+    "name": "GameplayInfrastructure.Core",
+    "references": [],
+    "noEngineReferences": true
 }

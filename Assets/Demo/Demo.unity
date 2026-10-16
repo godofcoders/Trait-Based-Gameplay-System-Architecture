@@ -281,8 +281,7 @@ MonoBehaviour:
     m_LineSpacing: 1
   m_Text: '1. Press space to ignite the barrel.
 
-    2. Barrel has max health and
-    ignitor has burn damage which both can be changed.
+    2. Set starting health on the barrel. Set damage on BarrelBurnConfig.
 
     3. Once the barrel is
     ignited its health starts depleting and once health turns zero the barrel is
@@ -924,7 +923,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40f7dc9a25476468f9d078644f994225, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _burnConfig: {fileID: 11400000, guid: 56444a64374994cd8b285f912337bb12, type: 2}
+  _traitConfigs:
+  - {fileID: 11400000, guid: 56444a64374994cd8b285f912337bb12, type: 2}
   _startingHealth: 100
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

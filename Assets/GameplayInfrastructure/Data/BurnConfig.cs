@@ -1,14 +1,20 @@
+using GameplayInfrastructure.Core;
+using GameplayInfrastructure.Traits;
 using UnityEngine;
 
 namespace GameplayInfrastructure.Data
 {
     [CreateAssetMenu(fileName = "NewBurnConfig", menuName = "Traits/Burn Configuration")]
-    public class BurnConfig : ScriptableObject
+    public sealed class BurnConfig : TraitConfig
     {
-        [Tooltip("Damage taken per second while burning.")]
+        [Min(0f), Tooltip("Health lost per second while burning.")]
         public float DamagePerSecond = 5f;
 
-        [Tooltip("At what health threshold should the fire automatically extinguish?")]
+        [Min(0f), Tooltip("Burn damage stops at this health and clears IsBurning. Must not exceed maximum health.")]
         public float ExtinguishThreshold = 0f;
+
+        // Copy values: editing a shared asset cannot change an existing simulation.
+        // Domain constructors validate these values in builds as well as the Editor.
+        public override ITrait CreateTrait() => new BurnableTrait(DamagePerSecond, ExtinguishThreshold);
     }
 }

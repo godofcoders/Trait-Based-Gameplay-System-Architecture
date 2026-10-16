@@ -1,10 +1,11 @@
-// A utility to convert strings to integer hashes at startup
 namespace GameplayInfrastructure.Core
 {
+    // Stable IDs, not runtime string hashes. Keep this name for source compatibility.
+    // Reserve new IDs here to avoid collisions between features.
     public static class AttributeHashes
     {
-        public static readonly int Health = UnityEngine.Animator.StringToHash("Health");
-        public static readonly int MaxHealth = UnityEngine.Animator.StringToHash("MaxHealth");
-        public static readonly int IsBurning = UnityEngine.Animator.StringToHash("IsBurning");
+        public const int Health = 1;
+        public const int MaxHealth = 2;
+        public const int IsBurning = 3;
     }
 }

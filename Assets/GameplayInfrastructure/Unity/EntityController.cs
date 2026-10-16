@@ -1,56 +1,87 @@
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 using GameplayInfrastructure.Core;
-using GameplayInfrastructure.Traits;
 using GameplayInfrastructure.Data;
+using GameplayInfrastructure.Traits;
+using UnityEngine;
 
 namespace GameplayInfrastructure.Unity
 {
-    public class EntityController : MonoBehaviour
+    public sealed class EntityController : MonoBehaviour
     {
-        [SerializeField] private BurnConfig _burnConfig;
-        [SerializeField] private float _startingHealth = 100f;
+        [SerializeField, Min(0.01f)] private float _startingHealth = 100f;
+        [SerializeField] private List<TraitConfig> _traitConfigs = new List<TraitConfig>();
+        private GameplayEntity _entity;
+        private bool _destroyed;
+        private bool _initializing;
 
-        private readonly AttributeMap _attributeMap = new AttributeMap();
-        private readonly List<ITrait> _traits = new List<ITrait>();
+        private void Awake() => EnsureInitialized();
 
-        private void Start()
+        private void EnsureInitialized()
         {
-            // Initialize traits via Dependency Injection
-            AddTrait(new HealthTrait(gameObject, _startingHealth));
-
-            if (_burnConfig != null)
+            if (_destroyed) throw new ObjectDisposedException(nameof(EntityController));
+            if (_entity != null) return;
+            if (_initializing) throw new InvalidOperationException("Recursive entity initialization.");
+            _initializing = true;
+            var traits = new List<ITrait>(_traitConfigs.Count);
+            bool transferred = false;
+            try
             {
-                AddTrait(new BurnableTrait(_burnConfig));
+                foreach (var config in _traitConfigs)
+                {
+                    if (config == null) throw new InvalidOperationException("Assign every trait configuration slot.");
+                    var trait = config.CreateTrait();
+                    if (trait == null) throw new InvalidOperationException("Trait factories must return a fresh instance.");
+                    traits.Add(trait);
+                }
+                // Validate health before handing over ownership, including on factory failure.
+                Numeric.RequireFinite(_startingHealth, nameof(_startingHealth));
+                if (_startingHealth <= 0f) throw new ArgumentOutOfRangeException(nameof(_startingHealth));
+                transferred = true;
+                _entity = new GameplayEntity(_startingHealth, traits.ToArray());
+                _entity.Died += HandleDeath;
+                if (_entity.IsDead) HandleDeath();
             }
+            catch (Exception initializationError)
+            {
+                enabled = false;
+                if (!transferred)
+                {
+                    var errors = new List<Exception> { initializationError };
+                    foreach (var trait in traits)
+                    {
+                        try { trait.Dispose(); }
+                        catch (Exception cleanupError) { errors.Add(cleanupError); }
+                    }
+                    if (errors.Count > 1) throw new AggregateException(errors);
+                }
+                throw;
+            }
+            finally { _initializing = false; }
         }
 
-        private void AddTrait(ITrait trait)
-        {
-            trait.Initialize(_attributeMap);
-            _traits.Add(trait);
-        }
+        private void Update() => _entity?.Tick(Time.deltaTime);
 
-        private void Update()
+        private void HandleDeath()
         {
-            float dt = Time.deltaTime;
-            // Iterate backwards if traits might remove themselves during execution
-            for (int i = _traits.Count - 1; i >= 0; i--)
-            {
-                _traits[i].Tick(dt);
-            }
+            enabled = false;
+            Destroy(gameObject); // Unity presentation/lifetime policy belongs here.
         }
 
         private void OnDestroy()
         {
-            foreach (var trait in _traits)
-            {
-                trait.Dispose();
-            }
-            _traits.Clear();
+            _destroyed = true;
+            if (_entity == null) return;
+            _entity.Died -= HandleDeath;
+            _entity.Dispose();
+            _entity = null;
         }
 
-        // Exposing the context for external systems (like UI or Weapons) to interact with
-        public IAttributeContext GetContext() => _attributeMap;
+        // Lazy initialization also supports callers from another component's Awake.
+        public IAttributeContext GetContext()
+        {
+            EnsureInitialized();
+            return _entity.Attributes;
+        }
     }
 }
