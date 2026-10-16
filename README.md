@@ -1,15 +1,44 @@
 # 🧩 Unity Trait-Based Gameplay Architecture
 
-![Unity](https://img.shields.io/badge/Unity-2021%2B-black)
+![Unity](https://img.shields.io/badge/Unity-6000.0.66f2-black)
 ![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture-blue)
 ![CSharp](https://img.shields.io/badge/C%23-Pure%20Domain-green)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-A **highly scalable gameplay architecture for Unity** that demonstrates how to move away from rigid `MonoBehaviour` inheritance and instead build a flexible **composition-based entity system** using **Pure C# domain logic and Clean Architecture principles**.
+A **production-minded learning architecture for Unity** that demonstrates how to move away from rigid `MonoBehaviour` inheritance and instead build a flexible **composition-based entity system** using **Pure C# domain logic and Clean Architecture principles**.
 
 Traditional Unity projects often evolve into tightly coupled systems where entities accumulate dozens of responsibilities. This architecture replaces that with **Trait-based composition**, allowing gameplay behaviors to remain modular, testable, and maintainable.
 
 ---
+
+
+## Current implementation and learning guide
+
+Open `Assets/Demo/Demo.unity`, enter Play mode, focus the Game view, and press **Space**. The barrel starts at 100 health, takes 20 burn damage per second, and displays its health and burning state. Restart Play mode to reset it.
+
+`EntityController` exposes **Starting Health** and an ordered **Trait Configs** list. Create a burn asset through **Assets → Create → Traits → Burn Configuration**. A positive extinguish threshold stops burn damage exactly at that health and clears `IsBurning`; external damage can still kill the entity. The threshold cannot exceed maximum health. Existing custom scenes using `_burnConfig` must move that asset into **Trait Configs**; the included demo is migrated.
+
+- Core and Traits forbid Unity engine references. Data assets create fresh runtime traits by copying configuration values.
+- `GameplayEntity` initializes health first, then optional traits in configuration order. Only time-based traits tick; disposal runs in reverse order, including after initialization failure.
+- Attributes must be registered once with finite bounds. Writes clamp to those bounds and reject NaN/infinity and unknown IDs. Zero-valued registration is supported; notifications are synchronous and registration is silent.
+- Health has a fixed maximum for one lifetime. Death fires once and stops subsequent ticks. Healing after death does not revive an entity; create a new instance for a new lifetime.
+- Treat contexts as trusted, single-threaded gameplay state. Avoid cyclic writes and exceptions in observers. Dispose observers when their lifetime ends.
+
+Read the [architecture walkthrough](docs/Architecture.md), [trait extension exercise](docs/Extending.md), and [contribution guide](CONTRIBUTING.md). This is a reference for production-minded practices, not an AAA-readiness guarantee. Networking, pooling, persistence, and large-scale scheduling are outside this example.
+
+To integrate, copy `Assets/GameplayInfrastructure` with its `.meta` files into a compatible Unity project, attach `EntityController`, and assign configuration assets. The runtime does not require the demo, URP, or an external DI framework. Keep the asmdefs to preserve dependency boundaries.
+
+### Run tests
+
+Run **EditMode** and **PlayMode** from Unity's **Window → General → Test Runner**. EditMode includes domain and ScriptableObject tests; PlayMode exercises the real demo scene and object destruction.
+
+For fast domain feedback on macOS/Linux, use Unity's bundled Mono and cached NUnit without starting the Editor:
+
+```bash
+UNITY_EDITOR="/Applications/Unity/Hub/Editor/6000.0.66f2/Unity.app/Contents/MacOS/Unity" bash scripts/test-domain.sh
+```
+
+Open the project once to resolve packages first. The script compiles Core and Traits without Unity DLLs, treats warnings as errors, runs the same attribute/entity NUnit tests, and writes `TestResults/domain.xml`. ScriptableObject and scene tests still need a licensed Unity Editor. Test results are excluded from Git.
 
 # 🚀 Overview
 
@@ -66,7 +95,7 @@ Benefits:
 
 ## Observer Pattern (Event-Driven Gameplay)
 
-Traits do **not poll state every frame**.
+`HealthTrait` responds to events without a per-frame method. `BurnableTrait` checks its burning state and applies time-based damage each tick.
 
 Instead of this:
 
@@ -84,7 +113,7 @@ Traits subscribe to attribute change events:
 OnAttributeChanged(Health)
 ```
 
-This eliminates unnecessary CPU work and ensures that **logic only runs when data changes**.
+Only traits implementing `ITickableTrait` receive updates. Event-only traits react when attributes change.
 
 Benefits:
 
@@ -177,7 +206,7 @@ This ensures **clean dependency flow**:
 
 ```
 Unity → Traits → Core
-Unity → Data → Core
+Unity → Data → Traits → Core
 ```
 
 Core systems remain **completely independent of Unity**.
@@ -190,7 +219,7 @@ This architecture is designed with **runtime performance and GC stability in min
 
 ### Zero String Allocations
 
-The attribute system uses **integer hashes** instead of strings.
+The attribute system uses **explicit integer IDs** instead of strings. Despite the retained name `AttributeHashes`, IDs are no longer Unity hashes.
 
 Example:
 
@@ -214,13 +243,13 @@ Benefits:
 
 ### Pre-Allocated Data Structures
 
-Collections are initialized with **predicted capacities** to avoid runtime resizing.
+Collections have initial capacities to reduce resizing. Growth, subscribers, and startup can still allocate; no zero-GC guarantee is claimed.
 
 Benefits:
 
-* Prevents memory spikes
-* Improves frame stability
-* Reduces hidden allocations
+* Reduces some collection growth
+* Makes initial capacity choices visible
+* Requires profiling at the intended workload
 
 ---
 
@@ -269,7 +298,7 @@ External scripts can modify the entity’s **attribute blackboard**.
 Example:
 
 ```
-SetAttribute(AttributeHashes.IsBurning, 1);
+entity.GetContext().SetValue(AttributeHashes.IsBurning, 1f);
 ```
 
 Traits subscribed to that attribute will automatically react.
@@ -283,13 +312,15 @@ External System
      ↓
 Set Attribute (IsBurning = 1)
      ↓
-Blackboard fires event
+BurnableTrait reads burning state during Tick
      ↓
-BurnableTrait receives update
+BurnableTrait reduces Health
      ↓
-Applies burn damage over time
+Blackboard announces Health change
      ↓
-HealthTrait updates health
+HealthTrait raises Died at zero
+     ↓
+EntityController destroys the GameObject
 ```
 
 No direct coupling exists between traits.
@@ -306,13 +337,13 @@ This architecture works best for:
 * AI behavior systems
 * Modular gameplay mechanics
 
-It scales extremely well as gameplay complexity grows.
+It demonstrates reusable composition. Scalability must be measured in a representative player build.
 
 ---
 
 # 📌 Requirements
 
-* **Unity 2021+**
+* **Unity 6000.0.66f2** (the recorded project version; other versions need validation)
 * C# 9+
 * Assembly Definition support
 
