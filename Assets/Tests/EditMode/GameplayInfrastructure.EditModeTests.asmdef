@@ -1,0 +1,14 @@
+{
+    "name": "GameplayInfrastructure.EditModeTests",
+    "references": [
+        "GameplayInfrastructure.Core",
+        "GameplayInfrastructure.Traits",
+        "GameplayInfrastructure.Data"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

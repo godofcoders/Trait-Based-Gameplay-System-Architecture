@@ -1,0 +1,12 @@
+{
+    "name": "GameplayInfrastructure.PlayModeTests",
+    "references": [
+        "GameplayInfrastructure.Core",
+        "GameplayInfrastructure.Traits",
+        "GameplayInfrastructure.Data",
+        "GameplayInfrastructure.Unity"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}
